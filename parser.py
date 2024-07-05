@@ -1,7 +1,7 @@
 import yaml
 from clang.cindex import Config, Index, CursorKind
 
-# Replace '/usr/lib/llvm-13/lib' with the actual path where libclang-13.so is located
+# Remplacez '/usr/lib/llvm-13/lib' par le chemin réel où libclang-13.so est situé
 Config.set_library_path('/usr/lib/llvm-13/lib')
 
 def parse_header(file_path, output_file):
@@ -33,26 +33,37 @@ def parse_header(file_path, output_file):
             node_data = {
                 'type': 'Class' if node.kind == CursorKind.CLASS_DECL else 'Struct',
                 'name': node.spelling,
-                'members_and_methods': []
+                'base_classes': [],
+                'members': [],
+                'methods': []
             }
+
+            # Check for base classes (inheritance)
+            for base in node.get_children():
+                if base.kind == CursorKind.CXX_BASE_SPECIFIER:
+                    node_data['base_classes'].append(base.type.spelling)
+
             # Visit children to find methods and members
             for child in node.get_children():
                 if child.kind == CursorKind.CXX_METHOD:
-                    node_data['members_and_methods'].append({
+                    method_data = {
                         'type': 'Method',
                         'name': child.spelling,
                         'return_type': child.result_type.spelling,
                         'parameters': [
                             {'name': arg.spelling, 'type': arg.type.spelling}
                             for arg in child.get_arguments()
-                        ]
-                    })
+                        ],
+                        'is_virtual': 'virtual' in child.type.spelling
+                    }
+                    node_data['methods'].append(method_data)
                 elif child.kind == CursorKind.FIELD_DECL:
-                    node_data['members_and_methods'].append({
+                    member_data = {
                         'type': 'Member',
                         'name': child.spelling,
                         'type': child.type.spelling
-                    })
+                    }
+                    node_data['members'].append(member_data)
 
         if node_data:
             output_data.append(node_data)

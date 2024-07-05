@@ -1,24 +1,34 @@
-#ifndef EXAMPLE_H
-#define EXAMPLE_H
+// test.h
+#ifndef TEST_H
+#define TEST_H
 
-int add(int a, int b);
-void print_message(const char* message);
-double multiply(double x, double y);
+#include <string>
 
-class ExampleClass {
+class Person {
 public:
-    ExampleClass();
-    ~ExampleClass();
-    int exampleMethod(int param1, double param2);
+    Person(const std::string &name, int age);
+    virtual ~Person();
+
+    std::string getName() const;
+    int getAge() const;
+
+    virtual void displayInfo() const;
+
 private:
-    int memberVariable;
+    std::string name;
+    int age;
 };
 
-struct ExampleStruct {
-    int field1;
-    double field2;
-    void structMethod();
+class Student : public Person {
+public:
+    Student(const std::string &name, int age, int studentID);
+    ~Student();
+
+    int getStudentID() const;
+    void displayInfo() const override;
+
+private:
+    int studentID;
 };
 
-#endif // EXAMPLE_H
-
+#endif // TEST_H
