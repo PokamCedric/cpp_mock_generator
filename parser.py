@@ -1,3 +1,4 @@
+import os
 import yaml
 from clang.cindex import Config, Index, CursorKind, TokenKind
 
@@ -88,15 +89,23 @@ def process_namespace(node):
 
 def process_enum(node):
     """Process an enum declaration."""
-    return {
+    enum_data = {
         'type': 'Enum',
         'name': node.spelling,
-        'values': [
-            {'name': enum_value.spelling}
-            for enum_value in node.get_children()
-            if enum_value.kind == CursorKind.ENUM_CONSTANT_DECL
-        ]
+        'values': []
     }
+
+    # Check if it's an enum class
+    if node.is_scoped_enum():
+        enum_data['type'] = 'EnumClass'
+
+    for enum_value in node.get_children():
+        if enum_value.kind == CursorKind.ENUM_CONSTANT_DECL:
+            enum_data['values'].append({
+                'name': enum_value.spelling
+            })
+
+    return enum_data
 
 def process_typedef(node):
     """Process a typedef declaration."""

@@ -1,5 +1,5 @@
-import os
 from parser import main
+
 
 
 if __name__ == '__main__':
@@ -13,6 +13,6 @@ if __name__ == '__main__':
         sys.exit(1)
 
     output_directory = 'outputs'  # Directory to save individual output files
-    parent_output_file = 'parent_output.yaml'  # File to save the combined output data
+    parent_output_file = 'outputs/parent_output.yaml'  # File to save the combined output data
 
     main(header_files, output_directory, parent_output_file)
