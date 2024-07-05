@@ -1,0 +1,39 @@
+- type: Namespace
+  name: MathUtils
+  children:
+    - type: Template
+      name: add
+      parameters:
+        - T
+      specializations: []
+- type: Using
+  name: String
+  underlying_type: std::string
+- type: Enum
+  name: Color
+  values:
+    - name: RED
+    - name: GREEN
+    - name: BLUE
+- type: Function
+  name: add
+  return_type: int
+  parameters:
+    - name: a
+      type: int
+    - name: b
+      type: int
+- type: Function
+  name: print_message
+  return_type: void
+  parameters:
+    - name: message
+      type: const char *
+- type: Function
+  name: multiply
+  return_type: double
+  parameters:
+    - name: x
+      type: double
+    - name: y
+      type: double

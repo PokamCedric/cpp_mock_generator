@@ -1,12 +1,18 @@
-from parser import parse_header, save_to_yaml
+import os
+from parser import main
 
-# Example usage
+
 if __name__ == '__main__':
-    header_files = ['test/base.h', 'test/derived.h', 'test/features.h']  # Replace with the paths to your header files
-    output_yaml_file = 'test/output.yaml'  # Replace with the desired output file path
+    import sys
 
-    # Parse the header files
-    parsed_data = parse_header(header_files)
+    # Get the header files from command line arguments
+    header_files = sys.argv[1:]
 
-    # Save the parsed data to a YAML file
-    save_to_yaml(parsed_data, output_yaml_file)
+    if not header_files:
+        print("Please provide at least one header file to parse.")
+        sys.exit(1)
+
+    output_directory = 'outputs'  # Directory to save individual output files
+    parent_output_file = 'parent_output.yaml'  # File to save the combined output data
+
+    main(header_files, output_directory, parent_output_file)

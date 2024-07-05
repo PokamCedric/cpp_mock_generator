@@ -81,7 +81,9 @@ def process_namespace(node):
         'children': []
     }
     for child in node.get_children():
-        namespace_data['children'].append(process_node(child))
+        child_data = process_node(child)
+        if child_data:
+            namespace_data['children'].append(child_data)
     return namespace_data
 
 def process_enum(node):
@@ -167,3 +169,27 @@ def save_to_yaml(data, output_file):
     """Save the parsed data to a YAML file."""
     with open(output_file, 'w') as file:
         yaml.dump(data, file, sort_keys=False)
+
+def parse_and_save(file_path, output_directory):
+    """Parse a single header file and save the result to a YAML file."""
+    parsed_data = parse_header([file_path])
+    base_name = os.path.basename(file_path)
+    output_file = os.path.join(output_directory, f"{os.path.splitext(base_name)[0]}_output.yaml")
+    save_to_yaml(parsed_data, output_file)
+    return output_file
+
+def main(header_files, output_directory, parent_output_file):
+    """Parse multiple header files and generate a parent YAML file that includes all individual outputs."""
+    all_data = []
+
+    os.makedirs(output_directory, exist_ok=True)
+
+    for header_file in header_files:
+        output_file = parse_and_save(header_file, output_directory)
+        all_data.append({
+            'file': header_file,
+            'output_file': output_file,
+        })
+
+    # Save the combined data to the parent output YAML file
+    save_to_yaml(all_data, parent_output_file)

@@ -1,0 +1,15 @@
+- type: Class
+  name: Base
+  base_classes: []
+  members:
+    - name: base_value
+      type: int
+      is_static: false
+  methods:
+    - name: get_value
+      return_type: int
+      parameters: []
+      is_virtual: false
+      is_static: false
+      is_const: true
+  static_members: []

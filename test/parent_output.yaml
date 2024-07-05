@@ -1,0 +1,6 @@
+- file: test/base.h
+  output_file: outputs/base_output.yaml
+- file: test/derived.h
+  output_file: outputs/derived_output.yaml
+- file: test/features.h
+  output_file: outputs/features_output.yaml
