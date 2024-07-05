@@ -112,20 +112,22 @@ def process_macro(node):
         'value': ''.join([t.spelling for t in node.get_tokens() if t.kind == TokenKind.LITERAL])
     }
 
+node_processors = {
+    CursorKind.FUNCTION_DECL: process_function,
+    CursorKind.CLASS_DECL: process_class,
+    CursorKind.NAMESPACE: process_namespace,
+    CursorKind.ENUM_DECL: process_enum,
+    CursorKind.TYPEDEF_DECL: process_typedef,
+    CursorKind.MACRO_DEFINITION: process_macro
+}
+
 def process_node(node):
     """Process a generic AST node."""
-    if node.kind == CursorKind.FUNCTION_DECL and not node.semantic_parent.kind in (CursorKind.CLASS_DECL, CursorKind.STRUCT_DECL):
-        return process_function(node)
-    elif node.kind == CursorKind.CLASS_DECL:
-        return process_class(node, processed_classes)
-    elif node.kind == CursorKind.NAMESPACE:
-        return process_namespace(node)
-    elif node.kind == CursorKind.ENUM_DECL:
-        return process_enum(node)
-    elif node.kind == CursorKind.TYPEDEF_DECL:
-        return process_typedef(node)
-    elif node.kind == CursorKind.MACRO_DEFINITION:
-        return process_macro(node)
+    processor = node_processors.get(node.kind)
+    if processor:
+        if node.kind == CursorKind.CLASS_DECL:
+            return processor(node, processed_classes)
+        return processor(node)
     return None
 
 def consolidate_classes(output_data, processed_classes):
