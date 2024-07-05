@@ -1,0 +1,46 @@
+- type: Class
+  name: Person
+  base_classes: []
+  members:
+  - type: Member
+    name: name
+    type: std::string
+    is_static: false
+  - type: Member
+    name: age
+    type: int
+    is_static: false
+  static_members:
+  - type: Member
+    name: population
+    type: int
+    is_static: true
+  methods:
+  - type: Method
+    name: Person
+    return_type: void
+    parameters:
+    - name: name
+      type: const std::string &
+    - name: age
+      type: int
+    is_virtual: false
+    is_static: false
+    is_const: false
+  - type: Method
+    name: ~Person
+    return_type: void
+    parameters: []
+    is_virtual: false
+    is_static: false
+    is_const: false
+  - type: Method
+    name: getName
+    return_type: std::string
+    parameters: []
+    is_virtual: false
+    is_static: false
+    is_const: true
+  - type: Method
+    name: getAge
+    return
