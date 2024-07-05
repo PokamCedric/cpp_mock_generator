@@ -4,6 +4,23 @@
 
 #include <string>
 
+#define PI 3.14159  // Define a constant
+
+namespace MathUtils {
+    template <typename T>
+    T add(T a, T b) {
+        return a + b;
+    }
+}
+
+using String = std::string;  // Type alias
+
+enum Color {
+    RED,
+    GREEN,
+    BLUE
+};
+
 class Person {
 public:
     Person(const std::string &name, int age);
@@ -13,6 +30,8 @@ public:
     int getAge() const;
 
     virtual void displayInfo() const;
+
+    static int population;  // Static member variable
 
 private:
     std::string name;
@@ -30,5 +49,9 @@ public:
 private:
     int studentID;
 };
+
+int add(int a, int b);
+void print_message(const char* message);
+double multiply(double x, double y);
 
 #endif // TEST_H
