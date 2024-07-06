@@ -62,7 +62,8 @@ def process_method(node):
         ],
         'is_virtual': 'virtual' in node.type.spelling,
         'is_static': node.is_static_method(),
-        'is_const': node.is_const_method()
+        'is_const': node.is_const_method(),
+        'access': 'public'  # Assuming public access, this can be refined
     }
 
 def process_member(node):
@@ -71,7 +72,8 @@ def process_member(node):
         'type': 'Member',
         'name': node.spelling,
         'type': node.type.spelling,
-        'is_static': node.is_static_field()
+        'is_static': node.is_static_field(),
+        'access': 'public'  # Assuming public access, this can be refined
     }
 
 def process_namespace(node):
@@ -186,19 +188,3 @@ def parse_and_save(file_path, output_directory):
     output_file = os.path.join(output_directory, f"{os.path.splitext(base_name)[0]}_output.yaml")
     save_to_yaml(parsed_data, output_file)
     return output_file
-
-def main(header_files, output_directory, parent_output_file):
-    """Parse multiple header files and generate a parent YAML file that includes all individual outputs."""
-    all_data = []
-
-    os.makedirs(output_directory, exist_ok=True)
-
-    for header_file in header_files:
-        output_file = parse_and_save(header_file, output_directory)
-        all_data.append({
-            'file': header_file,
-            'output_file': output_file,
-        })
-
-    # Save the combined data to the parent output YAML file
-    save_to_yaml(all_data, parent_output_file)
