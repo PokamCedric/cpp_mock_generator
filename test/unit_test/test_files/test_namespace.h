@@ -1,0 +1,3 @@
+namespace TestNamespace {
+    void testFunction();
+}
