@@ -1,7 +1,22 @@
 import os
 import sys
-from parser import parse_and_save, save_to_yaml
-from mock_generator import generate_mock_files
+import yaml
+from cppparser import CppParser
+from mock_generator import generate_mock_files  # Assurez-vous que cette importation est correcte
+
+def save_to_yaml(data, output_file):
+    """Save the parsed data to a YAML file."""
+    with open(output_file, 'w') as file:
+        yaml.dump(data, file, sort_keys=False)
+
+def parse_and_save(file_path, output_directory):
+    """Parse a single header file and save the result to a YAML file."""
+    parser = CppParser()
+    parsed_data = parser.parse_header([file_path])
+    base_name = os.path.basename(file_path)
+    output_file = os.path.join(output_directory, f"{os.path.splitext(base_name)[0]}_output.yaml")
+    save_to_yaml(parsed_data, output_file)
+    return output_file
 
 def main(header_files, output_directory, parent_output_file):
     """Parse multiple header files and generate a parent YAML file that includes all individual outputs,

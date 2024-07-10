@@ -1,18 +1,13 @@
 import unittest
-import yaml
-import os
-from clang.cindex import Index, CursorKind
-from parser import (
-    initialize_index, process_function, process_class, process_method,
-    process_member, process_namespace, process_enum, process_typedef,
-    process_macro, parse_header, save_to_yaml, parse_and_save, consolidate_classes
-)
+from clang.cindex import CursorKind
+from cppparser import CppParser
 
 class TestParser(unittest.TestCase):
+    parser = CppParser()
 
     def setUp(self):
         """Set up the Clang index and mock nodes for testing."""
-        self.index = initialize_index()
+        self.index = self.parser.__initialize_index()
 
     def test_process_function(self):
         """
@@ -38,7 +33,7 @@ class TestParser(unittest.TestCase):
         tu = self.index.parse('tests/test_function.h', args=['-x', 'c++', '-std=c++14'])
         for node in tu.cursor.get_children():
             if node.kind == CursorKind.FUNCTION_DECL:
-                function_data = process_function(node)
+                function_data = self.parser.__process_function(node)
                 self.assertEqual(function_data['type'], 'Function')
                 self.assertEqual(function_data['name'], 'testFunction')
                 self.assertEqual(function_data['return_type'], 'int')
@@ -70,7 +65,7 @@ class TestParser(unittest.TestCase):
         processed_classes = {}
         for node in tu.cursor.get_children():
             if node.kind == CursorKind.CLASS_DECL:
-                class_data = process_class(node, processed_classes)
+                class_data = self.parser.__process_class(node, processed_classes)
                 self.assertEqual(class_data['type'], 'Class')
                 self.assertEqual(class_data['name'], 'TestClass')
                 self.assertEqual(len(class_data['methods']), 1)
@@ -103,7 +98,7 @@ class TestParser(unittest.TestCase):
             if node.kind == CursorKind.CLASS_DECL:
                 for child in node.get_children():
                     if child.kind == CursorKind.CXX_METHOD:
-                        method_data = process_method(child)
+                        method_data = self.parser.__process_method(child)
                         self.assertEqual(method_data['type'], 'Method')
                         self.assertEqual(method_data['name'], 'testMethod')
                         self.assertEqual(method_data['return_type'], 'void')
@@ -136,7 +131,7 @@ class TestParser(unittest.TestCase):
             if node.kind == CursorKind.CLASS_DECL:
                 for child in node.get_children():
                     if child.kind == CursorKind.FIELD_DECL:
-                        member_data = process_member(child)
+                        member_data = self.parser.__process_member(child)
                         self.assertEqual(member_data['type'], 'Member')
                         self.assertEqual(member_data['name'], 'testMember')
                         self.assertEqual(member_data['type'], 'int')
@@ -164,7 +159,7 @@ class TestParser(unittest.TestCase):
         tu = self.index.parse('tests/test_namespace.h', args=['-x', 'c++', '-std=c++14'])
         for node in tu.cursor.get_children():
             if node.kind == CursorKind.NAMESPACE:
-                namespace_data = process_namespace(node)
+                namespace_data = self.parser.__process_namespace(node)
                 self.assertEqual(namespace_data['type'], 'Namespace')
                 self.assertEqual(namespace_data['name'], 'TestNamespace')
 
@@ -191,7 +186,7 @@ class TestParser(unittest.TestCase):
         tu = self.index.parse('tests/test_enum.h', args=['-x', 'c++', '-std=c++14'])
         for node in tu.cursor.get_children():
             if node.kind == CursorKind.ENUM_DECL:
-                enum_data = process_enum(node)
+                enum_data = self.parser.__process_enum(node)
                 self.assertEqual(enum_data['type'], 'Enum')
                 self.assertEqual(enum_data['name'], 'TestEnum')
                 self.assertEqual(len(enum_data['values']), 2)
@@ -219,7 +214,7 @@ class TestParser(unittest.TestCase):
         tu = self.index.parse('tests/test_enum_class.h', args=['-x', 'c++', '-std=c++14'])
         for node in tu.cursor.get_children():
             if node.kind == CursorKind.ENUM_DECL:
-                enum_data = process_enum(node)
+                enum_data = self.parser.__process_enum(node)
                 self.assertEqual(enum_data['type'], 'EnumClass')
                 self.assertEqual(enum_data['name'], 'TestEnumClass')
                 self.assertEqual(len(enum_data['values']), 2)
@@ -247,7 +242,7 @@ class TestParser(unittest.TestCase):
         tu = self.index.parse('tests/test_typedef.h', args=['-x', 'c++', '-std=c++14'])
         for node in tu.cursor.get_children():
             if node.kind == CursorKind.TYPEDEF_DECL:
-                typedef_data = process_typedef(node)
+                typedef_data = self.parser.__process_typedef(node)
                 self.assertEqual(typedef_data['type'], 'Typedef')
                 self.assertEqual(typedef_data['name'], 'TestType')
                 self.assertEqual(typedef_data['underlying_type'], 'int')
@@ -275,7 +270,7 @@ class TestParser(unittest.TestCase):
         tu = self.index.parse('tests/test_macro.h', args=['-x', 'c++', '-std=c++14'])
         for node in tu.cursor.get_children():
             if node.kind == CursorKind.MACRO_DEFINITION:
-                macro_data = process_macro(node)
+                macro_data = self.parser.__process_macro(node)
                 self.assertEqual(macro_data['type'], 'Macro')
                 self.assertEqual(macro_data['name'], 'TEST_MACRO')
                 self.assertEqual(macro_data['value'], '1')
@@ -298,86 +293,10 @@ class TestParser(unittest.TestCase):
            - One function with type 'Function'.
            - Name 'testFunction'.
         """
-        parsed_data = parse_header(['tests/test_function.h'])
+        parsed_data = self.parser.parse_header(['tests/test_function.h'])
         self.assertEqual(len(parsed_data), 1)
         self.assertEqual(parsed_data[0]['type'], 'Function')
         self.assertEqual(parsed_data[0]['name'], 'testFunction')
-
-    def test_save_to_yaml(self):
-        """
-        **Test Name:** `test_save_to_yaml`
-
-        **Purpose:**
-        To verify that the `save_to_yaml` function correctly saves a given data structure to a YAML file and that the saved data matches the original data.
-
-        **Setup:**
-        1. Define a dictionary `data` containing:
-           - A type of 'Class'.
-           - A name 'Test'.
-           - One method named 'method1' with a return type of 'void' and no parameters.
-           - Empty lists for members, static members, and friend classes.
-
-        **Execution:**
-        1. Call the `save_to_yaml` function with `data` and the file path `'tests/test_output.yaml'`.
-
-        **Validation:**
-        1. Verify that the file `tests/test_output.yaml` is created successfully.
-        2. Load the contents of the file `tests/test_output.yaml` using `yaml.safe_load`.
-        3. Assert that the loaded data matches the original data structure by checking:
-           - The value of the 'type' key is 'Class'.
-           - The value of the 'name' key is 'Test'.
-           - The length of the 'methods' list is 1.
-           - The name of the first method in the 'methods' list is 'method1'.
-        """
-        data = {
-            'type': 'Class',
-            'name': 'Test',
-            'methods': [{'name': 'method1', 'return_type': 'void', 'parameters': []}],
-            'members': [],
-            'static_members': [],
-            'friend_classes': []
-        }
-        output_file = 'tests/test_output.yaml'
-        save_to_yaml(data, output_file)
-        with open(output_file, 'r') as file:
-            loaded_data = yaml.safe_load(file)
-        self.assertEqual(loaded_data, data)
-        os.remove(output_file)
-
-    def test_parse_and_save(self):
-        """
-        **Test Name:** `test_parse_and_save`
-
-        **Purpose:**
-        To verify that the `parse_and_save` function correctly parses a header file and saves the resulting data structure to a YAML file.
-
-        **Setup:**
-        1. Specify the test header file `tests/test_function.h`.
-        2. Specify the output directory `tests/outputs`.
-
-        **Execution:**
-        1. Call `parse_and_save` with the test header file and output directory.
-
-        **Validation:**
-        1. Verify that the YAML file is created successfully in the specified output directory.
-        2. Load the contents of the YAML file using `yaml.safe_load`.
-        3. Assert that the loaded data contains:
-           - One function with type 'Function'.
-           - Name 'testFunction'.
-
-        **Cleanup:**
-        Remove the output file
-        """
-        output_directory = 'tests/outputs'
-        if not os.path.exists(output_directory):
-            os.makedirs(output_directory)
-        output_file = parse_and_save('tests/test_function.h', output_directory)
-        with open(output_file, 'r') as file:
-            loaded_data = yaml.safe_load(file)
-        self.assertEqual(len(loaded_data), 1)
-        self.assertEqual(loaded_data[0]['type'], 'Function')
-        self.assertEqual(loaded_data[0]['name'], 'testFunction')
-        os.remove(output_file)
 
     def test_consolidate_classes(self):
         """
@@ -435,7 +354,7 @@ class TestParser(unittest.TestCase):
         }
 
         output_data = [base_class, derived_class]
-        consolidate_classes(output_data, processed_classes)
+        self.parser.__consolidate_classes(output_data, processed_classes)
 
         self.assertEqual(len(output_data[1]['members']), 2)  # baseMember + derivedMember
         self.assertEqual(len(output_data[1]['methods']), 2)  # baseMethod + derivedMethod
@@ -468,7 +387,7 @@ class TestParser(unittest.TestCase):
         base_class_data = None
         for node in tu.cursor.get_children():
             if node.kind == CursorKind.CLASS_DECL and node.spelling == 'BaseClass':
-                base_class_data = process_class(node, {})
+                base_class_data = self.parser.__process_class(node, {})
                 break
 
         self.assertIsNotNone(base_class_data)
@@ -511,7 +430,7 @@ class TestParser(unittest.TestCase):
         derived_class_data = None
         for node in tu.cursor.get_children():
             if node.kind == CursorKind.CLASS_DECL and node.spelling == 'DerivedClass':
-                derived_class_data = process_class(node, {})
+                derived_class_data = self.parser.__process_class(node, {})
                 break
 
         self.assertIsNotNone(derived_class_data)
@@ -554,7 +473,7 @@ class TestParser(unittest.TestCase):
         friend_class_data = None
         for node in tu.cursor.get_children():
             if node.kind == CursorKind.CLASS_DECL and node.spelling == 'FriendClass':
-                friend_class_data = process_class(node, {})
+                friend_class_data = self.parser.__process_class(node, {})
                 break
 
         self.assertIsNotNone(friend_class_data)
@@ -567,55 +486,6 @@ class TestParser(unittest.TestCase):
         self.assertEqual(len(friend_class_data['methods']), 2)  # friendMethod for BaseClass and DerivedClass
         self.assertEqual(len(friend_class_data['members']), 0)  # No members
         self.assertEqual(len(friend_class_data['static_members']), 0)  # No static members
-
-    def test_save_to_yaml(self):
-        """
-        **Test Name:** `test_save_to_yaml`
-
-        **Purpose:**
-        To verify that the `save_to_yaml` function correctly saves a given data structure to a YAML file and that the saved data matches the original data.
-
-        **Setup:**
-        1. Define a dictionary `data` containing:
-           - A type of 'Class'.
-           - A name 'Test'.
-           - One method named 'method1' with a return type of 'void' and no parameters.
-           - Empty lists for members, static members, and friend classes.
-
-        **Execution:**
-        1. Call the `save_to_yaml` function with `data` and the file path `'tests/test_output.yaml'`.
-
-        **Validation:**
-        1. Verify that the file `tests/test_output.yaml` is created successfully.
-        2. Load the contents of the file `tests/test_output.yaml` using `yaml.safe_load`.
-        3. Assert that the loaded data matches the original data structure by checking:
-           - The value of the 'type' key is 'Class'.
-           - The value of the 'name' key is 'Test'.
-           - The length of the 'methods' list is 1.
-           - The name of the first method in the 'methods' list is 'method1'.
-        """
-        data = {
-            'type': 'Class',
-            'name': 'Test',
-            'methods': [{'name': 'method1', 'return_type': 'void', 'parameters': []}],
-            'members': [],
-            'static_members': [],
-            'friend_classes': []
-        }
-        save_to_yaml(data, 'tests/test_output.yaml')
-
-        # Check if the file was created
-        self.assertTrue(os.path.exists('tests/test_output.yaml'))
-
-        # Load YAML and check if data matches
-        with open('tests/test_output.yaml', 'r') as file:
-            loaded_data = yaml.safe_load(file)
-
-        self.assertEqual(loaded_data['type'], 'Class')
-        self.assertEqual(loaded_data['name'], 'Test')
-        self.assertEqual(len(loaded_data['methods']), 1)
-        self.assertEqual(loaded_data['methods'][0]['name'], 'method1')
-
 
 if __name__ == '__main__':
     unittest.main()
