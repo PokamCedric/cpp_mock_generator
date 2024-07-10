@@ -74,8 +74,20 @@ class CppParser:
             'is_virtual': 'virtual' in node.type.spelling,
             'is_static': node.is_static_method(),
             'is_const': node.is_const_method(),
-            'access': 'public'  # Assuming public access, this can be refined
+            'access': self.__get_access_specifier(node)
         }
+
+    def __get_access_specifier(self, node):
+        """Get the access specifier of a node."""
+        access_specifier = node.access_specifier
+        if access_specifier == clang.cindex.AccessSpecifier.PUBLIC:
+            return 'public'
+        elif access_specifier == clang.cindex.AccessSpecifier.PROTECTED:
+            return 'protected'
+        elif access_specifier == clang.cindex.AccessSpecifier.PRIVATE:
+            return 'private'
+        else:
+            return 'public'  # default to public if unknown
 
     def __process_member(self, node):
         """Process a member declaration."""
@@ -83,7 +95,7 @@ class CppParser:
             'type': 'Member',
             'name': node.spelling,
             'is_static': node.is_static_field(),
-            'access': 'public'  # Assuming public access, this can be refined
+            'access': self.__get_access_specifier(node)
         }
 
     def __process_namespace(self, node):

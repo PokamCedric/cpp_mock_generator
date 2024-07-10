@@ -11,8 +11,7 @@ def save_to_yaml(data, output_file):
 
 def parse_and_save(file_path, output_directory):
     """Parse a single header file and save the result to a YAML file."""
-    parser = CppParser()
-    parsed_data = parser.parse_header([file_path])
+    parsed_data = CppParser().parse_header([file_path])
     base_name = os.path.basename(file_path)
     output_file = os.path.join(output_directory, f"{os.path.splitext(base_name)[0]}_output.yaml")
     save_to_yaml(parsed_data, output_file)
